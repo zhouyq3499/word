@@ -1,0 +1,48 @@
+/* --------------  响应式根字号  -------------- */
+html {
+  /* 14px → 20px 自动插值 */
+  font-size: clamp(14px, 1.1vw + 8px, 20px);
+}
+
+/* --------------  统一变量（同步放大） -------------- */
+:root {
+  --primary: #6fa8ff;
+  --glass: rgba(240, 248, 255, 0.7);
+  --radius: 0.5rem;
+  --space-xs: 0.4rem;
+  --space-sm: 0.8rem;
+  --space: 1.2rem;
+  --space-lg: 1.6rem;
+  --space-xl: 2rem;
+
+  /* 文字变量整体 +2px */
+  --text-base: 1.2rem;   // 原来是 1rem
+  --text-lg: 1.4rem;     // 原来是 1.2rem
+  --text-xl: 1.6rem;     // 原来是 1.4rem
+  --text-xxl: 1.8rem;    // 原来是 1.6rem
+}
+
+/* --------------  通用按钮/卡片 mixin  -------------- */
+@mixin btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-lg);
+  font-size: var(--text-base);
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--primary);
+  color: #fff;
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+@mixin card {
+  background: var(--glass);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
