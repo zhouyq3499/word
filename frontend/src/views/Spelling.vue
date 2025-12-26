@@ -61,7 +61,7 @@ import { pronounceWord } from '@/utils/speech'
 
 export default {
   name: 'Spelling',
-  data () {
+  data() {
     return {
       idx: 0,
       list: [],
@@ -73,52 +73,51 @@ export default {
     }
   },
   computed: {
-    ...mapState(useLearnStore, { learnedWords: 'learnedWordsByLevel' }),
-    totalCount () { return this.list.length },
-    current () { return this.list[this.idx] || { meaning: '' } },
-    accuracy () { return this.totalCount ? Math.round((this.correctCount / this.totalCount) * 100) : 0 }
+    ...mapState(useLearnStore, ['learnedWordsByLevel']),
+    totalCount() { return this.list.length },
+    current() { return this.list[this.idx] || { meaning: '' } },
+    accuracy() { return this.totalCount ? Math.round((this.correctCount / this.totalCount) * 100) : 0 }
   },
-  created () {
-    this.hydrate()
-    this.list = this.shuffle([...this.learnedWords])
+  async created() {
+    await this.hydrate()
+    this.list = this.shuffle([...this.learnedWordsByLevel])
   },
   methods: {
     ...mapActions(useLearnStore, ['hydrate']),
-    shuffle (arr) {
+    shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[arr[i], arr[j]] = [arr[j], arr[i]]
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]]
       }
       return arr
     },
-    onInput (e) { this.input = e.target.value.toLowerCase() },
-    play () { pronounceWord(this.current.word) },
-    check () {
+    onInput(e) { this.input = e.target.value.toLowerCase() },
+    play() { pronounceWord(this.current.word) },
+    check() {
       this.answered = true
       this.correct = this.input.trim().toLowerCase() === this.current.word.toLowerCase()
       if (this.correct) this.correctCount++
     },
-    nextWord () {
+    nextWord() {
       if (this.idx >= this.list.length - 1) this.isCompleted = true
       else { this.idx++; this.reset() }
     },
-    retry () { this.reset() },
-    reset () { this.input = ''; this.answered = false; this.correct = false },
-    restart () {
+    retry() { this.reset() },
+    reset() { this.input = ''; this.answered = false; this.correct = false },
+    restart() {
       this.idx = 0
       this.reset()
       this.isCompleted = false
       this.correctCount = 0
-      this.list = this.shuffle([...this.learnedWords])
+      this.list = this.shuffle([...this.learnedWordsByLevel])
     },
-    home () { this.$router.replace('/home') }
+    home() { this.$router.replace('/home') }
   }
 }
 </script>
 
 <style lang="scss" scoped>
 @import '@/styles/index.scss';
-
 .spelling-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
@@ -126,7 +125,6 @@ export default {
   display: flex;
   flex-direction: column;
 }
-
 .spelling-header {
   display: flex;
   justify-content: center;
@@ -150,15 +148,12 @@ export default {
     color: #333;
   }
 }
-
 .spelling-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
 }
-
-/* 空状态 */
 .empty-state {
   text-align: center;
   padding: var(--space-xl);
@@ -188,8 +183,6 @@ export default {
     font-size: var(--text-base);
   }
 }
-
-/* 释义区域 */
 .word-meaning {
   @include card;
   padding: var(--space-lg);
@@ -208,8 +201,6 @@ export default {
 .definition {
   color: #555;
 }
-
-/* 输入区 */
 .input-area {
   display: flex;
   gap: var(--space-sm);
@@ -233,8 +224,6 @@ export default {
   color: #fff;
   border: none;
 }
-
-/* 反馈 & 按钮 */
 .feedback {
   padding: var(--space-lg);
   text-align: center;
@@ -271,8 +260,6 @@ export default {
   font-weight: 600;
   border: none;
 }
-
-/* 完成态 */
 .completed-section {
   text-align: center;
   padding: var(--space-xl);
@@ -288,12 +275,6 @@ export default {
   justify-content: center;
   margin: 0 auto var(--space-lg);
   font-size: 2rem;
-}
-.completed-title {
-  font-size: var(--text-xl);
-  font-weight: 800;
-  margin-bottom: var(--space-lg);
-  color: #333;
 }
 .stats {
   display: flex;

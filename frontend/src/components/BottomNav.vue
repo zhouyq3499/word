@@ -36,7 +36,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 5rem;              // 稍高
+  height: 4.4rem;              // 稍高
   background: var(--glass);
   backdrop-filter: blur(10px);
   display: flex;
@@ -50,7 +50,7 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 1.8rem;        // ★ 字号加大
+    font-size: 1.5rem;        // ★ 字号加大
     color: #666;
     text-decoration: none;
     transition: color .2s;

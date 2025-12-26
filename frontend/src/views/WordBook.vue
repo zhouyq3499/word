@@ -3,7 +3,7 @@
     <div class="page-content">
       <h1 class="page-title">我的单词本</h1>
 
-      <div class="empty-state common-card" v-if="wordBook.length === 0">
+      <div class="empty-state common-card" v-if="userWordBook.length === 0">
         <div class="empty-icon">🔖</div>
         <p class="empty-text">单词本还是空的哦~</p>
         <p class="empty-subtext">在学习中标记"不认识"的单词会在这里显示</p>
@@ -11,10 +11,10 @@
       </div>
 
       <div v-else>
-        <div class="word-count common-card">共 {{ wordBook.length }} 个单词</div>
+        <div class="word-count common-card">共 {{ userWordBook.length }} 个单词</div>
         <div class="word-cards">
           <word-card
-            v-for="(word, index) in wordBook"
+            v-for="(word, index) in userWordBook"
             :key="index"
             :word="word"
             :show-delete="true"
@@ -38,11 +38,11 @@ export default {
   name: 'WordBook',
   components: { WordCard, BottomNav },
   computed: {
-    ...mapState(useLearnStore, ['wordBook'])
+    ...mapState(useLearnStore, ['userWordBook'])   // ✅ 用改名后的 getter
   },
   methods: {
     ...mapActions(useLearnStore, ['removeFromWordBook', 'hydrate']),
-    async remove (word) {
+    async remove(word) {
       if (!confirm(`确定将“${word.word}”从单词本移除吗？`)) return
       await this.hydrate()
       await this.removeFromWordBook(word)

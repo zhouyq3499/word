@@ -3,10 +3,15 @@
     <div class="box common-card">
       <h1 class="title">用户注册</h1>
       <div class="input-group">
-        <div class="item"><input v-model="form.username" placeholder="用户名"></div>
-        <div class="item"><input v-model="form.email" placeholder="邮箱"></div>
-        <div class="item"><input v-model="form.password" type="password" placeholder="密码（≥6位）"></div>
-        <div class="item"><input v-model="form.confirm" type="password" placeholder="确认密码"></div>
+        <div class="item">
+          <input v-model="form.username" placeholder="用户名">
+        </div>
+        <div class="item">
+          <input v-model="form.password" type="password" placeholder="密码（≥6位）">
+        </div>
+        <div class="item">
+          <input v-model="form.confirm" type="password" placeholder="确认密码">
+        </div>
       </div>
       <button class="btn" @click="register">注册</button>
       <p class="link">已有账号？<span @click="$router.replace('/login')">立即登录</span></p>
@@ -16,10 +21,23 @@
 
 <script>
 export default {
-  data(){ return { form:{username:'',email:'',password:'',confirm:''} } },
-  methods:{
-    register(){
-      if(!this.form.username||!this.form.email||!this.form.password||this.form.password!==this.form.confirm||this.form.password.length<6) return alert('请检查输入')
+  data() {
+    return { form: { username: '', password: '', confirm: '' } }
+  },
+  methods: {
+    register() {
+      if (!this.form.username || !this.form.password || this.form.password !== this.form.confirm || this.form.password.length < 6) {
+        alert('请检查输入')
+        return
+      }
+      const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
+      if (users.find(u => u.username === this.form.username)) {
+        alert('用户名已存在')
+        return
+      }
+      users.push({ username: this.form.username, password: this.form.password })
+      localStorage.setItem('registeredUsers', JSON.stringify(users))
+      alert('注册成功')
       this.$router.replace('/login')
     }
   }
@@ -28,7 +46,6 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/styles/index.scss';
-
 .register-page {
   min-height: 100vh;
   display: flex;
@@ -56,6 +73,7 @@ export default {
     input {
       width: 100%;
       height: 2.4rem;
+      box-sizing: border-box;
       border: none;
       border-radius: var(--radius);
       padding: 0 var(--space);

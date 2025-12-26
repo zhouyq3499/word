@@ -6,8 +6,14 @@
 
 <script>
 export default {
-  props:{ current:{type:Number,default:0}, target:{type:Number,default:10} },
-  computed:{ percent(){ return `${Math.min(100,Math.round((this.current/this.target)*100))}%` } }
+  props: { current: { type: Number, default: 0 }, target: { type: Number, default: 10 } },
+  computed: {
+    percent() {
+      if (!this.target) return '0%'
+      const ratio = Math.min(1, Math.max(0, this.current / this.target))
+      return `${Math.round(ratio * 100)}%`
+    }
+  }
 }
 </script>
 

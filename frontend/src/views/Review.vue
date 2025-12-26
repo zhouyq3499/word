@@ -70,7 +70,7 @@ import { useLearnStore } from '@/store/learn'
 import { pronounceWord } from '@/utils/speech'
 
 export default {
-  data () {
+  data() {
     return {
       idx: 0,
       isCompleted: false,
@@ -81,20 +81,18 @@ export default {
     }
   },
   computed: {
-    ...mapState(useLearnStore, {
-      learnedWords: 'learnedWordsByLevel',
-      reviewList: 'reviewList',
-      wordBook: 'wordBook'
-    }),
-    current () { return this.reviewList[this.idx] || {} },
-    fillWidth () { return this.reviewList.length ? `${((this.idx + 1) / this.reviewList.length) * 100}%` : '0%' },
-    accuracy () { return this.totalReviewed ? Math.round((this.correct / this.totalReviewed) * 100) : 0 }
+    ...mapState(useLearnStore, ['learnedWordsByLevel', 'reviewList']),
+    current() { return this.reviewList[this.idx] || {} },
+    fillWidth() { return this.reviewList.length ? `${((this.idx + 1) / this.reviewList.length) * 100}%` : '0%' },
+    accuracy() { return this.totalReviewed ? Math.round((this.correct / this.totalReviewed) * 100) : 0 }
   },
-  created () { this.init() },
+  async created() {
+    await this.init()
+  },
   methods: {
     ...mapActions(useLearnStore, ['hydrate', 'addToWordBook']),
-    init () {
-      this.hydrate()
+    async init() {
+      await this.hydrate()
       this.idx = 0
       this.isCompleted = false
       this.correct = 0
@@ -102,9 +100,9 @@ export default {
       this.stageStatus = ''
       this.totalReviewed = 0
     },
-    home () { this.$router.replace('/home') },
-    play () { pronounceWord(this.current.word) },
-    async stage (type) {
+    home() { this.$router.replace('/home') },
+    play() { pronounceWord(this.current.word) },
+    async stage(type) {
       this.stageStatus = type
       this.showMeaning = true
       this.totalReviewed++
@@ -114,12 +112,12 @@ export default {
         this.correct++
       }
     },
-    async wrong () {
+    async wrong() {
       this.correct = Math.max(0, this.correct - 1)
       if (!this.wordBook.find(w => w.id === this.current.id)) await this.addToWordBook(this.current)
       this.next()
     },
-    next () {
+    next() {
       if (this.idx >= this.reviewList.length - 1) {
         this.isCompleted = true
       } else {
@@ -128,7 +126,7 @@ export default {
         this.stageStatus = ''
       }
     },
-    restart () {
+    restart() {
       this.idx = 0
       this.isCompleted = false
       this.correct = 0
@@ -142,7 +140,6 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/styles/index.scss';
-
 .review-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
