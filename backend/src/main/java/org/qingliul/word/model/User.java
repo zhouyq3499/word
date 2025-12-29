@@ -29,7 +29,8 @@ public class User {
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
-
+    @Column(name = "bio", length = 500)
+    private String bio = "这个人很低调，还没有写简介";
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

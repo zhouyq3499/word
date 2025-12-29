@@ -17,6 +17,6 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
         jdbc.time_zone: Asia/Shanghai
-
 deepseek:
   key: sk-0f2819a2c73d42fbadd56ca90694c788
+

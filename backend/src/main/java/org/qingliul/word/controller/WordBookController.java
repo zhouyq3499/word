@@ -7,6 +7,7 @@ import org.qingliul.word.repository.UserWordBookRepository;
 import org.qingliul.word.repository.WordRepository;
 import org.springframework.web.bind.annotation.*;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,7 @@ public class WordBookController {
     }
 
     @DeleteMapping("/remove")
+    @Transactional
     public void remove(@RequestBody Map<String, Long> body) {
         repo.deleteByUserIdAndWordId(body.get("userId"), body.get("wordId"));
     }

@@ -3,14 +3,21 @@ package org.qingliul.word.service;
 import lombok.RequiredArgsConstructor;
 import org.qingliul.word.model.User;
 import org.qingliul.word.repository.UserRepository;
+import org.qingliul.word.repository.WordRecordRepository;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final WordRecordRepository wordRecordRepository;
 
     // 用户注册
     public User register(String username, String password) {
@@ -67,4 +74,39 @@ public class UserService {
         user.setDailyTarget(updatedUser.getDailyTarget());
         return userRepository.save(user);
     }
+
+    public int getStreakDays(Long userId) {
+        List<java.sql.Date> rawDates = wordRecordRepository
+                .findDistinctStudyDatesByUser(userId);
+
+        if (rawDates.isEmpty()) return 0;
+
+        Set<LocalDate> studyDates = rawDates.stream()
+                .map(java.sql.Date::toLocalDate)
+                .collect(Collectors.toSet());
+
+        LocalDate today = LocalDate.now();
+        int streak = 0;
+
+        // 从今天开始往前数
+        LocalDate cursor = today;
+        while (studyDates.contains(cursor)) {
+            streak++;
+            cursor = cursor.minusDays(1);
+        }
+        System.out.println("Today: " + LocalDate.now());
+        System.out.println("Study dates: " + studyDates);System.out.println("Today: " + LocalDate.now());
+        System.out.println("Study dates: " + studyDates);
+        return streak;
+
+    }
+    // 在 UserService.java 中添加
+// 更新个人简介
+    public User updateBio(Long userId, String bio) {
+        User user = findById(userId);
+        user.setBio(bio);
+        return userRepository.save(user);
+    }
+
 }
+

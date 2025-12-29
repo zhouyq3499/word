@@ -38,15 +38,16 @@ public class WordController {
         Long wordId = Long.valueOf(payload.get("wordId").toString());
         Boolean isCorrect = (Boolean) payload.get("isCorrect");
         Long userId = Long.valueOf(payload.get("userId").toString());
+        String source = (String) payload.get("source"); // ✅ 新增字段
 
-        // 1. 保存学习记录
         WordRecord record = new WordRecord();
         record.setWordId(wordId);
         record.setIsCorrect(isCorrect);
         record.setUserId(userId);
+        record.setSource(source); // ✅ 设置来源
+
         wordRecordRepository.save(record);
 
-        // 2. 如果是错题，加入单词本
         if (!isCorrect) {
             if (!userWordBookRepository.existsByUserIdAndWordId(userId, wordId)) {
                 userWordBookRepository.save(new UserWordBook(null, userId, wordId, null));

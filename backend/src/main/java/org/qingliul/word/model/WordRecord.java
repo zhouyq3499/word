@@ -16,7 +16,8 @@ public class WordRecord {
     private Long wordId;
 
     private Boolean isCorrect;
-
+    @Column(nullable = false)
+    private String source;
     private LocalDateTime createTime;
 
     @Column(nullable = false)

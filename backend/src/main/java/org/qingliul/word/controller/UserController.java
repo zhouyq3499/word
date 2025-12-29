@@ -73,19 +73,19 @@ public class UserController {
     }
 
     // 获取用户信息
-    @GetMapping("/{id}")
+    @GetMapping("/detail/{id}")
     public Map<String, Object> getUser(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
-
         try {
             User user = userService.findById(id);
             response.put("success", true);
             response.put("user", user);
+            int streak = userService.getStreakDays(id);
+            response.put("streakDays", streak);
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", e.getMessage());
         }
-
         return response;
     }
 
@@ -193,7 +193,36 @@ public class UserController {
 
         return result;
     }
+    // 在 UserController.java 中添加
+// 更新用户个人简介
+    @PutMapping("/{id}/bio")
+    public Map<String, Object> updateBio(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
 
+        Map<String, Object> response = new HashMap<>();
+        String bio = request.get("bio");
+
+        if (bio == null || bio.trim().isEmpty()) {
+            bio = "这个人很低调，还没有写简介";
+        }
+
+        if (bio.length() > 500) {
+            bio = bio.substring(0, 500);
+        }
+
+        try {
+            User user = userService.updateBio(id, bio);
+            response.put("success", true);
+            response.put("user", user);
+            response.put("message", "个人简介更新成功");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+
+        return response;
+    }
     @GetMapping("/accuracy/{userId}/{level}")
     public Map<String, Object> getAccuracyByLevel(
             @PathVariable Long userId,

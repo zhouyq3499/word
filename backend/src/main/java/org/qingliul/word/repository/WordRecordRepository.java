@@ -73,7 +73,7 @@ public interface WordRecordRepository extends JpaRepository<WordRecord, Long> {
             "COUNT(*) as total, " +
             "SUM(CASE WHEN is_correct = true THEN 1 ELSE 0 END) as correct " +
             "FROM word_record " +
-            "WHERE user_id = :userId",
+            "WHERE user_id = :userId AND source = 'learn'",
             nativeQuery = true)
     Map<String, Object> calculateAccuracy(@Param("userId") Long userId);
 
@@ -83,10 +83,17 @@ public interface WordRecordRepository extends JpaRepository<WordRecord, Long> {
             "SUM(CASE WHEN is_correct = true THEN 1 ELSE 0 END) as correct " +
             "FROM word_record r " +
             "JOIN word w ON r.word_id = w.id " +
-            "WHERE r.user_id = :userId AND w.level = :level",
+            "WHERE r.user_id = :userId AND w.level = :level AND source = 'learn'",
             nativeQuery = true)
     Map<String, Object> calculateAccuracyByLevel(
             @Param("userId") Long userId,
             @Param("level") String level
     );
+
+    @Query(value = "SELECT DISTINCT DATE(create_time) as study_date " +
+            "FROM word_record " +
+            "WHERE user_id = :userId " +
+            "ORDER BY study_date DESC",
+            nativeQuery = true)
+    List<java.sql.Date> findDistinctStudyDatesByUser(@Param("userId") Long userId);
 }
