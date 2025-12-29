@@ -30,7 +30,7 @@ export async function login(username, password) {
 // 获取用户信息
 export async function getUserInfo(userId) {
   try {
-    const response = await API.get(`/${userId}`);
+    const response = await API.get(`/detail/${userId}`);
     return response.data;
   } catch (error) {
     console.error('获取用户信息失败:', error);
@@ -58,4 +58,14 @@ export async function updateDailyTarget(userId, target) {
     console.error('更新每日目标失败:', error);
     throw error;
   }
+}
+
+export async function updateBio(userId, bio) {
+    try {
+        const response = await API.put(`/${userId}/bio`, { bio });
+        return response.data;
+    } catch (error) {
+        console.error('更新个人简介失败:', error);
+        throw error;
+    }
 }

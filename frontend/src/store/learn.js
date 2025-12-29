@@ -446,29 +446,28 @@ export const useLearnStore = defineStore('learn', {
     },
 
     async recordResult({ word, isCorrect }) {
-      if (!word) return false
-      const payload = {
-        ...word,
-        level: word.level || this.currentLevel,
-        user: this.currentUser,
-        isKnown: isCorrect
-      }
-      const idx = this.learnedRecords.findIndex(w => w.id === payload.id && w.user === this.currentUser)
-      if (idx === -1) this.learnedRecords.push(payload)
-      else this.learnedRecords.splice(idx, 1, payload)
+  if (!word) return false
+  const payload = {
+    ...word,
+    level: word.level || this.currentLevel,
+    user: this.currentUser,
+    isKnown: isCorrect
+  }
+  const idx = this.learnedRecords.findIndex(w => w.id === payload.id && w.user === this.currentUser)
+  if (idx === -1) this.learnedRecords.push(payload)
+  else this.learnedRecords.splice(idx, 1, payload)
 
-      let added = false
-      
-      const userWordBook = this.wordBook.filter(w => w.user === this.currentUser)
-      if (!isCorrect && !userWordBook.find(w => w.id === payload.id)) {
-        this.wordBook.push(payload)
-        added = true
-      }
-      
-      this.persist()
-      await submitResult(payload.id, isCorrect)
-      return added
-    },
+  let added = false
+  const userWordBook = this.wordBook.filter(w => w.user === this.currentUser)
+  if (!isCorrect && !userWordBook.find(w => w.id === payload.id)) {
+    this.wordBook.push(payload)
+    added = true
+  }
+
+  this.persist()
+  await submitResult(payload.id, isCorrect, 'learn') // ✅ 确保这里传了 'learn'
+  return added
+},
 
     addToWordBook(word) {
       if (!word) return

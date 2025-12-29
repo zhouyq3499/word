@@ -160,7 +160,7 @@ export default {
 
       // 同步到后端数据库
       try {
-        await submitResult(this.current.id, isCorrect)
+       await submitResult(this.current.id, isCorrect, 'review')
         console.log(`复习记录同步成功: ID ${this.current.id}, 结果: ${isCorrect}`)
       } catch (e) {
         console.error("同步复习结果失败", e)

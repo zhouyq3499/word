@@ -1,12 +1,12 @@
 <template>
   <div class="word-book-page">
     <div class="page-content">
-      <h1 class="page-title">我的单词本</h1>
+      <h1 class="page-title">我的错题本</h1>
 
       <div class="empty-state common-card" v-if="userWordBook.length === 0">
         <div class="empty-icon">🔖</div>
-        <p class="empty-text">单词本还是空的哦~</p>
-        <p class="empty-subtext">在学习中标记"不认识"的单词会在这里显示</p>
+        <p class="empty-text">错题本还是空的哦~</p>
+        <p class="empty-subtext">在学习中错误的单词会在这里显示</p>
         <button class="start-learn-btn" @click="$router.push('/learn')">开始学习</button>
       </div>
 

@@ -23,13 +23,33 @@ const router = new VueRouter({
   routes
 })
 
+
 /* =============== 登录守卫 =============== */
 router.beforeEach((to, from, next) => {
-  const whiteList = ['/login', '/register']              // 无需登录即可访问
-  const token = localStorage.getItem('userId')           // 登录后你存的是 userId
-  if (whiteList.includes(to.path)) return next()         // 白名单直接放行
-  if (!token) return next('/login')                      // 没登录 → 回登录页
-  next()                                                 // 已登录 → 放行
+  const whiteList = ['/login', '/register']
+  const userId = localStorage.getItem('userId')
+
+  // 更严谨的判断：空字符串、undefined、null 都视为未登录
+  const isLoggedIn = !!userId
+
+  if (whiteList.includes(to.path)) {
+    // 已登录时访问登录页，自动跳首页
+    if (isLoggedIn && to.path === '/login') {
+      return next('/home')
+    }
+    return next()
+  }
+
+  if (!isLoggedIn) {
+    return next('/login')
+  }
+
+  next()
 })
 
+router.afterEach(() => {
+  window.scrollTo(0, 0)
+})
 export default router
+
+

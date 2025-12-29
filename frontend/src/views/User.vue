@@ -109,11 +109,10 @@
 <script>
 import { mapState, mapActions } from 'pinia'
 import { useLearnStore } from '@/store/learn'
-import { getAccuracyByLevel } from '@/api/learn'  // ✅ 添加导入
+import { getAccuracyByLevel } from '@/api/learn'
+import { getUserInfo, updateBio } from '@/api/user'
 import { mockWords } from '@/mock/words'
 import BottomNav from '@/components/BottomNav.vue'
-
-const STORAGE_KEY = 'user-profile'
 
 export default {
   name: 'User',
@@ -121,13 +120,13 @@ export default {
   data() {
     return {
       profile: {
-        nickname: 'Kimi',
+        nickname: '',
         levelLabel: 'CET-4',
         bio: '这个人很低调，还没有写简介'
       },
       selectedLevel: 'CET4',
       userDailyTarget: 15,
-      stats: { streak: 15 },
+      stats: { streak: 0 },
       reminder: '每日 19:30',
       reminderOn: true,
       showBioModal: false,
@@ -165,13 +164,11 @@ export default {
       return this.currentUser || this.profile.nickname || '未命名'
     },
     
-    // ✅ 修正：只定义一个 accuracyValue
     accuracyValue() {
       return this.accuracyData.accuracy || 0
     }
   },
   watch: {
-    // ✅ 修正：分开两个 watch
     targetCount: {
       immediate: true,
       handler(newVal) {
@@ -195,18 +192,8 @@ export default {
     this.selectedLevel = store.currentLevel
     this.userDailyTarget = store.targetCount
     
-    // 更新等级标签
-    this.profile.levelLabel = this.getLevelLabel(this.selectedLevel)
-    
-    // 加载本地个人资料
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      const p = JSON.parse(saved)
-      this.profile = { ...this.profile, ...p.profile }
-      this.stats = { ...this.stats, ...p.stats }
-      this.reminder = p.reminder || this.reminder
-      this.reminderOn = p.reminderOn ?? this.reminderOn
-    }
+    // 从数据库加载用户信息
+    await this.loadUserProfile()
     
     // 同步数据库的用户设置
     await store.syncUserLearningData()
@@ -216,11 +203,36 @@ export default {
     this.selectedLevel = store.currentLevel
     this.profile.levelLabel = this.getLevelLabel(this.selectedLevel)
     
-    // ✅ 初始加载准确率数据
+    // 初始加载准确率数据
     await this.loadAccuracyData(this.selectedLevel)
   },
   methods: {
     ...mapActions(useLearnStore, ['changeLevel', 'updateDailyTarget', 'logoutUser']),
+    
+    // 从数据库加载用户信息
+    async loadUserProfile() {
+      const userId = localStorage.getItem('userId')
+      if (!userId) return
+
+      try {
+        const res = await getUserInfo(userId)
+        if (res.success && res.user) {
+          // 更新界面显示
+          this.profile.nickname = res.user.username
+          this.selectedLevel = res.user.currentLevel
+          this.userDailyTarget = res.user.dailyTarget
+          this.stats.streak = res.streakDays || 0
+          
+          // 从数据库获取个人简介
+          this.profile.bio = res.user.bio || '这个人很低调，还没有写简介'
+          
+          // 更新等级标签
+          this.profile.levelLabel = this.getLevelLabel(this.selectedLevel)
+        }
+      } catch (e) {
+        console.error('获取用户信息失败', e)
+      }
+    },
     
     async handleLevelChange(event) {
       const level = event.target.value
@@ -229,7 +241,7 @@ export default {
       
       // 调用store的action更新数据库
       await this.changeLevel(level)
-      // ✅ 等级变化后重新加载准确率
+      // 等级变化后重新加载准确率
       await this.loadAccuracyData(level)
     },
     
@@ -264,7 +276,7 @@ export default {
       }
     },
     
-    // ✅ 前端计算准确率（降级方案）
+    // 前端计算准确率（降级方案）
     calculateFrontendAccuracy(level) {
       const store = useLearnStore()
       
@@ -308,24 +320,55 @@ export default {
       this.showBioModal = false
     },
     
-    saveBio() {
-      this.profile.bio = this.tempBio
-      this.showBioModal = false
-      this.save()
+    async saveBio() {
+      const userId = localStorage.getItem('userId')
+      if (!userId) {
+        alert('请先登录')
+        return
+      }
+      
+      const bio = this.tempBio.trim()
+      const finalBio = bio || '这个人很低调，还没有写简介'
+      
+      try {
+        // 保存到后端数据库
+        const result = await updateBio(userId, finalBio)
+        
+        if (result.success) {
+          this.profile.bio = finalBio
+          this.showBioModal = false
+          
+          // 更新本地存储的用户信息
+          const userInfo = localStorage.getItem('userInfo')
+          if (userInfo) {
+            const user = JSON.parse(userInfo)
+            user.bio = finalBio
+            localStorage.setItem('userInfo', JSON.stringify(user))
+          }
+          
+          alert('个人简介更新成功')
+        } else {
+          alert(result.message || '更新失败')
+        }
+      } catch (error) {
+        console.error('保存个人简介失败:', error)
+        alert('保存失败，请稍后重试')
+      }
     },
     
     toggleReminder() {
       this.reminderOn = !this.reminderOn
-      this.save()
+      this.saveLocalSettings()
     },
     
-    save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    saveLocalSettings() {
+      const settings = {
         profile: this.profile,
         stats: this.stats,
         reminder: this.reminder,
         reminderOn: this.reminderOn
-      }))
+      }
+      localStorage.setItem('user-settings', JSON.stringify(settings))
     },
     
     logout() {

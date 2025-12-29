@@ -49,11 +49,12 @@ export async function getWords(level) {
 /**
  * 提交学习/复习结果到数据库
  */
-export async function submitResult(wordId, isCorrect) {
+export async function submitResult(wordId, isCorrect, source = 'learn') {
   const response = await WORDS_API.post('/submit', {
     wordId,
     isCorrect,
-    userId: getUid()
+    userId: getUid(),
+    source // ✅ 传入来源
   })
   return response.data
 }

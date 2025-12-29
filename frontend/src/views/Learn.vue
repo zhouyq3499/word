@@ -43,7 +43,7 @@
       <h3>恭喜完成今日学习目标！</h3>
       <div class="stats">
         <div><span class="num">{{ targetCount }}</span><span class="label">学习单词</span></div>
-        <div><span class="num">{{ newWordsInBook }}</span><span class="label">加入单词本</span></div>
+        <div><span class="num">{{ newWordsInBook }}</span><span class="label">加入错题本</span></div>
       </div>
       <div class="completed-buttons">
         <button class="continue-btn" @click="restart">继续学习</button>
@@ -74,6 +74,7 @@ export default {
       showAnswer: false,
       newWordsInBook: 0,
        todayLearnedCount: 0,
+       freeMode: false,
       isCompleted: false
     }
   },
@@ -87,6 +88,7 @@ export default {
     const store = useLearnStore()
     await store.hydrate()
     await store.loadLevelIfEmpty()
+    await this.refreshTodayCount()
     this.prepareOptions()
     this.checkCompleted()
   const userId = localStorage.getItem('userId')
@@ -118,6 +120,8 @@ export default {
   this.showAnswer = true
   const option = this.options[idx]
   const added = await this.recordResult({ word: this.currentWord, isCorrect: option.correct })
+  await this.refreshTodayCount()
+
   const userId = localStorage.getItem('userId')
   const level = useLearnStore().currentLevel
   const todayLearned = await getTodayLearned(userId, level)
@@ -125,22 +129,40 @@ export default {
   if (added) this.newWordsInBook++
   this.checkCompleted()
 },
+ async refreshTodayCount() {
+    const userId = localStorage.getItem('userId')
+    const level = useLearnStore().currentLevel
+    const todayLearned = await getTodayLearned(userId, level)
+    this.todayLearnedCount = todayLearned.length
+    this.isCompleted = false
+  },
     next() {
       if (!this.showAnswer) { this.showAnswer = true; return }
       this.nextWord()
       this.prepareOptions()
-      this.checkCompleted()
+      this.isCompleted = false
     },
     checkCompleted() {
+       if (this.freeMode) return // ✅ 自由模式下不跳完成页
   if (this.todayLearnedCount >= this.targetCount && this.targetCount > 0) {
     this.isCompleted = true
   }
 },
-    restart() {
-      this.isCompleted = false
-      this.newWordsInBook = 0
-      this.prepareOptions()
-    },
+    async restart() {
+  // if (this.todayLearnedCount >= this.targetCount) {
+  //   this.isCompleted = true
+  //   return
+  // }
+  
+  this.isCompleted = false
+  this.newWordsInBook = 0
+  this.freeMode = true 
+
+  const store = useLearnStore() // ✅ 补上这一行
+  await store.loadLevelIfEmpty()
+  await this.refreshTodayCount()
+  this.prepareOptions()
+},
     play() { pronounceWord(this.currentWord?.word) },
     optClass(idx) {
       if (!this.showAnswer) return idx === this.selectedIdx ? 'selected' : ''
@@ -150,6 +172,7 @@ export default {
     }
   }
 }
+
 </script>
 
 <style lang="scss" scoped>
