@@ -19,10 +19,11 @@ export default {
   data () {
     return {
       navList: [
-        { path: '/home',   title: '首页',   icon: 'el-icon-house' },
-        { path: '/word-book', title: '单词本', icon: 'el-icon-notebook-2' },
-        { path: '/user', title: '我的',   icon: 'el-icon-user' }
-      ]
+      { path: '/home',   title: '首页',   icon: 'el-icon-house' },
+      { path: '/word-book', title: '单词本', icon: 'el-icon-notebook-2' },
+      { path: '/ai-chat', title: 'AI 解答', icon: 'el-icon-chat-dot-square' }, // ★新增
+      { path: '/user', title: '我的',   icon: 'el-icon-user' }
+    ]
     }
   }
 }

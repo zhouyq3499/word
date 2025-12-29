@@ -19,7 +19,10 @@
       <section class="function-section">
         <div class="function-row">
           <button class="function-btn learn-btn" @click="$router.push('/learn')">Learn</button>
-          <button class="function-btn review-btn" @click="$router.push('/review')">Review</button>
+          <button class="function-btn review-btn" 
+            @click="$router.push({ path: '/review', query: { level: currentLevel } })">
+      Review
+    </button>
           <button class="function-btn spell-btn" @click="$router.push('/spelling')">Spell</button>
         </div>
       </section>
@@ -42,13 +45,14 @@ export default {
     currentCategoryLabel() {
       if (this.currentLevel === 'CET4') return 'CET-4'
       if (this.currentLevel === 'CET6') return 'CET-6'
-      if (this.currentLevel === 'POSTGRADUATE') return '考研词汇'
+      if (this.currentLevel === 'KaoYan') return '考研词汇'
       return this.currentLevel
     }
   },
   async created() {
     const store = useLearnStore()
     await store.hydrate()      // ① 先拿到当前用户
+    
     await store.fetchWords()   // ② 再拉该用户数据
   }
 }

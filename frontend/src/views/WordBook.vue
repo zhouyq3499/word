@@ -29,23 +29,40 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'pinia'
+import { mapState } from 'pinia'
 import { useLearnStore } from '@/store/learn'
 import WordCard from '@/components/WordCard.vue'
 import BottomNav from '@/components/BottomNav.vue'
+import { getWordBook, removeFromWordBook } from '@/api/learn'
 
 export default {
   name: 'WordBook',
   components: { WordCard, BottomNav },
+  data() {
+    return {
+      wordBook: []
+    }
+  },
   computed: {
-    ...mapState(useLearnStore, ['userWordBook'])   // ✅ 用改名后的 getter
+    ...mapState(useLearnStore, ['currentUser']),
+    userWordBook() {
+      return this.wordBook
+    }
+  },
+  async mounted() {
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      this.wordBook = await getWordBook(userId)
+    } else {
+      this.$router.replace('/login')
+    }
   },
   methods: {
-    ...mapActions(useLearnStore, ['removeFromWordBook', 'hydrate']),
     async remove(word) {
-      if (!confirm(`确定将“${word.word}”从单词本移除吗？`)) return
-      await this.hydrate()
-      await this.removeFromWordBook(word)
+      const userId = localStorage.getItem('userId')
+      if (!userId) return
+      await removeFromWordBook(userId, word.id)
+      this.wordBook = this.wordBook.filter(w => w.id !== word.id)
     }
   }
 }

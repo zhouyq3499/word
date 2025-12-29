@@ -17,7 +17,7 @@
 
     <div class="empty-state common-card" v-if="reviewList.length === 0">
       <div class="empty-icon">📖</div>
-      <p v-if="learnedWords.length">恭喜！所有单词都已掌握</p>
+      <p v-if="learnedWordsByLevel.length">恭喜！所有单词都已掌握</p>
       <p v-else>今天还没有学习单词哦~</p>
       <p class="empty-subtext">完成学习后才能进行复习</p>
       <button class="start-learn-btn" @click="$router.push('/learn')">去学习</button>
@@ -68,6 +68,10 @@
 import { mapState, mapActions } from 'pinia'
 import { useLearnStore } from '@/store/learn'
 import { pronounceWord } from '@/utils/speech'
+import axios from 'axios' // 确保这行存在
+import { submitResult } from '@/api/learn'
+// ✅ 新增：导入封装的API函数
+import { getReviewList } from '@/api/learn'
 
 export default {
   data() {
@@ -77,20 +81,55 @@ export default {
       correct: 0,
       showMeaning: false,
       stageStatus: '',
+      list: [],
       totalReviewed: 0
     }
   },
   computed: {
-    ...mapState(useLearnStore, ['learnedWordsByLevel', 'reviewList']),
+    ...mapState(useLearnStore, ['learnedWordsByLevel', 'userWordBook', 'currentLevel']),
     current() { return this.reviewList[this.idx] || {} },
+    reviewList() { 
+      return this.list.length > 0 ? this.list : this.learnedWordsByLevel 
+    },
     fillWidth() { return this.reviewList.length ? `${((this.idx + 1) / this.reviewList.length) * 100}%` : '0%' },
     accuracy() { return this.totalReviewed ? Math.round((this.correct / this.totalReviewed) * 100) : 0 }
   },
   async created() {
-    await this.init()
+    try {
+      await this.hydrate()  // 确保store已初始化
+      
+      // ✅ 方案1：使用导入的getReviewList函数
+      const level = this.currentLevel || 'CET4'
+      const reviewData = await getReviewList(level)
+      
+      // ✅ 修复：调用本地定义的shuffle方法
+      this.list = this.shuffle(reviewData || [])
+      
+      if (this.list.length === 0) {
+        console.log("还没有学过单词，复习列表为空")
+        // 降级方案：使用本地已学单词
+        this.list = this.shuffle([...this.learnedWordsByLevel])
+      }
+    } catch (e) {
+      console.error("加载复习列表失败", e)
+      // 错误处理：使用本地数据
+      this.list = this.shuffle([...this.learnedWordsByLevel])
+    }
   },
   methods: {
     ...mapActions(useLearnStore, ['hydrate', 'addToWordBook']),
+    
+    // ✅ 新增：shuffle方法（从Spelling.vue复制过来）
+    shuffle(arr) {
+      const array = [...arr]  // 创建副本
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]]
+      }
+      return array
+    },
+    
+    // ✅ 新增：初始化方法
     async init() {
       await this.hydrate()
       this.idx = 0
@@ -100,23 +139,47 @@ export default {
       this.stageStatus = ''
       this.totalReviewed = 0
     },
+    
     home() { this.$router.replace('/home') },
     play() { pronounceWord(this.current.word) },
+    
     async stage(type) {
       this.stageStatus = type
       this.showMeaning = true
       this.totalReviewed++
+
+      const isCorrect = (type === 'know' || type === 'fuzzy')
+
       if (type === 'forget') {
-        if (!this.wordBook.find(w => w.id === this.current.id)) await this.addToWordBook(this.current)
+        if (!this.userWordBook.find(w => w.id === this.current.id)) {
+          await this.addToWordBook(this.current)
+        }
       } else {
         this.correct++
       }
+
+      // 同步到后端数据库
+      try {
+        await submitResult(this.current.id, isCorrect)
+        console.log(`复习记录同步成功: ID ${this.current.id}, 结果: ${isCorrect}`)
+      } catch (e) {
+        console.error("同步复习结果失败", e)
+      }
     },
+
     async wrong() {
       this.correct = Math.max(0, this.correct - 1)
-      if (!this.wordBook.find(w => w.id === this.current.id)) await this.addToWordBook(this.current)
+      try {
+        await submitResult(this.current.id, false)
+      } catch (e) {
+        console.error("更新错误结果失败", e)
+      }
+      if (!this.userWordBook.find(w => w.id === this.current.id)) {
+        await this.addToWordBook(this.current)
+      }
       this.next()
     },
+    
     next() {
       if (this.idx >= this.reviewList.length - 1) {
         this.isCompleted = true
@@ -126,6 +189,7 @@ export default {
         this.stageStatus = ''
       }
     },
+    
     restart() {
       this.idx = 0
       this.isCompleted = false

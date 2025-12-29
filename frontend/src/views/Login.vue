@@ -4,10 +4,10 @@
       <h1 class="title">单词记忆大师</h1>
       <div class="input-group">
         <div class="item">
-          <input v-model="form.username" placeholder="请输入用户名">
+          <input v-model="form.username" placeholder="请输入用户名" @keyup.enter="login">
         </div>
         <div class="item">
-          <input v-model="form.password" type="password" placeholder="请输入密码">
+          <input v-model="form.password" type="password" placeholder="请输入密码" @keyup.enter="login">
         </div>
       </div>
       <button class="btn" @click="login">登录</button>
@@ -20,31 +20,85 @@
 </template>
 
 <script>
+import { login } from '@/api/user'
 import { useLearnStore } from '@/store/learn'
-
+import { getLevelProgress } from '@/api/learn'
 export default {
   name: 'Login',
   data() {
-    return { form: { username: '', password: '' } }
+    return { 
+      form: { 
+        username: '', 
+        password: '' 
+      } 
+    }
   },
   methods: {
     async login() {
       if (!this.form.username.trim() || !this.form.password.trim()) {
-        alert('请输入完整')
+        alert('请输入用户名和密码')
         return
       }
-      // 1. 仅保留“注册池”在 localStorage（已注册才能登录）
-      const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-      const user = users.find(u => u.username === this.form.username && u.password === this.form.password)
-      if (!user) {
-        alert('用户名或密码错误')
-        return
+      
+      try {
+        const result = await login(this.form.username, this.form.password)
+        
+        if (result.success) {
+          const user = result.user
+          
+          // 保存到 store
+          const store = useLearnStore()
+          await store.loginUser(user)
+          
+          // 保存到 localStorage
+          localStorage.setItem('userId', user.id)
+          localStorage.setItem('userInfo', JSON.stringify(user))
+          
+          // ✅ 关键修改：直接调用 fetchWords 而不是 syncUserLearningData
+      console.log('登录成功，开始加载单词数据...')
+      await store.fetchWords(user.currentLevel || 'CET4')
+      
+      // ✅ 获取学习进度
+      try {
+        const progressData = await getLevelProgress(store.currentLevel)
+        const learnedCount = progressData.learnedCount || 0
+        console.log(`学习进度: ${learnedCount} 个单词`)
+        
+        if (learnedCount > 0 && store.words.length > 0) {
+          // 直接更新 learnedRecords
+          const newRecords = []
+          for (let i = 0; i < learnedCount && i < store.words.length; i++) {
+            const word = store.words[i]
+            newRecords.push({
+              id: word.id,
+              word: word.word,
+              meaning: word.meaning,
+              level: store.currentLevel,
+              user: store.currentUser,
+              isKnown: true
+            })
+          }
+          
+          // 合并记录
+          store.learnedRecords = [
+            ...store.learnedRecords.filter(w => !(w.level === store.currentLevel && w.user === store.currentUser)),
+            ...newRecords
+          ]
+          
+          store.persist()
+          console.log(`✅ 已同步 ${newRecords.length} 个学习记录`)
+        }
+      } catch (error) {
+        console.error('获取学习进度失败:', error)
       }
-      // 2. 统一把当前用户交给仓库（后续全部走 Pinia）
-      await useLearnStore().loginUser({ username: this.form.username })
-      // 3. 保持 token 兼容
-      localStorage.setItem('mock-token', 'fake-token')
+      
       this.$router.replace('/home')
+    } else {
+      alert(result.message || '登录失败')
+    }
+  } catch (error) {
+    alert('登录失败：' + error.message)
+      }
     }
   }
 }
@@ -88,7 +142,7 @@ export default {
       background: rgba(255, 255, 255, 0.6);
       &:focus {
         outline: none;
-        box-shadow: 0 0 0 2px #000;
+        box-shadow: 0 0 0 2px var(--primary);
       }
     }
   }
@@ -104,6 +158,7 @@ export default {
     span {
       color: var(--primary);
       cursor: pointer;
+      font-weight: 600;
     }
   }
 }

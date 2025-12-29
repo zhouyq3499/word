@@ -4,41 +4,66 @@
       <h1 class="title">用户注册</h1>
       <div class="input-group">
         <div class="item">
-          <input v-model="form.username" placeholder="用户名">
+          <input v-model="form.username" placeholder="用户名" @keyup.enter="register">
         </div>
         <div class="item">
-          <input v-model="form.password" type="password" placeholder="密码（≥6位）">
+          <input v-model="form.password" type="password" placeholder="密码（≥6位）" @keyup.enter="register">
         </div>
         <div class="item">
-          <input v-model="form.confirm" type="password" placeholder="确认密码">
+          <input v-model="form.confirm" type="password" placeholder="确认密码" @keyup.enter="register">
         </div>
       </div>
       <button class="btn" @click="register">注册</button>
-      <p class="link">已有账号？<span @click="$router.replace('/login')">立即登录</span></p>
+      <p class="link">
+        已有账号？
+        <span @click="$router.replace('/login')">立即登录</span>
+      </p>
     </div>
   </div>
 </template>
 
 <script>
+import { register } from '@/api/user'
+
 export default {
   data() {
-    return { form: { username: '', password: '', confirm: '' } }
+    return { 
+      form: { 
+        username: '', 
+        password: '', 
+        confirm: '' 
+      } 
+    }
   },
   methods: {
-    register() {
-      if (!this.form.username || !this.form.password || this.form.password !== this.form.confirm || this.form.password.length < 6) {
-        alert('请检查输入')
+    async register() {
+      if (!this.form.username || !this.form.password || !this.form.confirm) {
+        alert('请填写所有字段')
         return
       }
-      const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-      if (users.find(u => u.username === this.form.username)) {
-        alert('用户名已存在')
+      
+      if (this.form.password !== this.form.confirm) {
+        alert('两次输入的密码不一致')
         return
       }
-      users.push({ username: this.form.username, password: this.form.password })
-      localStorage.setItem('registeredUsers', JSON.stringify(users))
-      alert('注册成功')
-      this.$router.replace('/login')
+      
+      if (this.form.password.length < 6) {
+        alert('密码长度至少6位')
+        return
+      }
+      
+      try {
+        const result = await register(this.form.username, this.form.password)
+        
+        if (result.success) {
+          alert('注册成功！请登录')
+          this.$router.replace('/login')
+        } else {
+          alert(result.message || '注册失败')
+        }
+      } catch (error) {
+        alert('注册失败：' + (error.response?.data?.message || error.message))
+      }
     }
   }
 }
@@ -93,6 +118,7 @@ export default {
       span {
         color: var(--primary);
         cursor: pointer;
+        font-weight: 600;
       }
     }
   }

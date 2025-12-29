@@ -58,7 +58,7 @@
 import { mapState, mapActions } from 'pinia'
 import { useLearnStore } from '@/store/learn'
 import { pronounceWord } from '@/utils/speech'
-
+import { getTodayLearned } from '@/api/learn'
 export default {
   name: 'Spelling',
   data() {
@@ -73,14 +73,16 @@ export default {
     }
   },
   computed: {
-    ...mapState(useLearnStore, ['learnedWordsByLevel']),
+    ...mapState(useLearnStore, ['currentLevel']),
     totalCount() { return this.list.length },
     current() { return this.list[this.idx] || { meaning: '' } },
     accuracy() { return this.totalCount ? Math.round((this.correctCount / this.totalCount) * 100) : 0 }
   },
   async created() {
     await this.hydrate()
-    this.list = this.shuffle([...this.learnedWordsByLevel])
+    const userId = localStorage.getItem('userId')
+    const level = this.currentLevel
+    this.list = this.shuffle(await getTodayLearned(userId, level))
   },
   methods: {
     ...mapActions(useLearnStore, ['hydrate']),
@@ -105,12 +107,16 @@ export default {
     retry() { this.reset() },
     reset() { this.input = ''; this.answered = false; this.correct = false },
     restart() {
-      this.idx = 0
-      this.reset()
-      this.isCompleted = false
-      this.correctCount = 0
-      this.list = this.shuffle([...this.learnedWordsByLevel])
-    },
+  this.idx = 0
+  this.reset()
+  this.isCompleted = false
+  this.correctCount = 0
+  const userId = localStorage.getItem('userId')
+  const level = this.currentLevel
+  getTodayLearned(userId, level).then(list => {
+    this.list = this.shuffle(list)
+  })
+},
     home() { this.$router.replace('/home') }
   }
 }

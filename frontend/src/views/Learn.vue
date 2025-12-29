@@ -8,7 +8,7 @@
     <section class="progress-section common-card">
       <div class="progress-info">
         <span>学习进度</span>
-        <span class="progress-count">{{ currentProgress }}/{{ targetCount }}</span>
+        <span class="progress-count">{{ todayLearnedCount }}/{{ targetCount }}</span>
       </div>
       <progress-bar :current="currentProgress" :target="targetCount"/>
     </section>
@@ -52,9 +52,9 @@
     </div>
 
     <div class="empty-state common-card" v-if="!isCompleted && !currentWord">
-      <div>📚</div>
+      <div class="empty-icon">📚</div>
       <p>今天已学完所有单词，明天再来吧！</p>
-      <button class="home-btn" @click="$router.replace('/home')">返回首页</button>
+      <button class="start-learn-btn" @click="$router.replace('/home')">返回首页</button>
     </div>
   </div>
 </template>
@@ -64,7 +64,7 @@ import { mapState, mapActions } from 'pinia'
 import { useLearnStore } from '@/store/learn'
 import { pronounceWord } from '@/utils/speech'
 import ProgressBar from '@/components/ProgressBar.vue'
-
+import { getTodayLearned } from '@/api/learn'
 export default {
   components: { ProgressBar },
   data() {
@@ -73,6 +73,7 @@ export default {
       selectedIdx: null,
       showAnswer: false,
       newWordsInBook: 0,
+       todayLearnedCount: 0,
       isCompleted: false
     }
   },
@@ -88,6 +89,10 @@ export default {
     await store.loadLevelIfEmpty()
     this.prepareOptions()
     this.checkCompleted()
+  const userId = localStorage.getItem('userId')
+  const level = store.currentLevel
+  const todayLearned = await getTodayLearned(userId, level)
+  this.todayLearnedCount = todayLearned.length
   },
   methods: {
     ...mapActions(useLearnStore, ['hydrate', 'loadLevelIfEmpty', 'recordResult', 'nextWord']),
@@ -108,14 +113,18 @@ export default {
       return arr
     },
     async select(idx) {
-      if (this.showAnswer) return
-      this.selectedIdx = idx
-      this.showAnswer = true
-      const option = this.options[idx]
-      const added = await this.recordResult({ word: this.currentWord, isCorrect: option.correct })
-      if (added) this.newWordsInBook++
-      this.checkCompleted()
-    },
+  if (this.showAnswer) return
+  this.selectedIdx = idx
+  this.showAnswer = true
+  const option = this.options[idx]
+  const added = await this.recordResult({ word: this.currentWord, isCorrect: option.correct })
+  const userId = localStorage.getItem('userId')
+  const level = useLearnStore().currentLevel
+  const todayLearned = await getTodayLearned(userId, level)
+  this.todayLearnedCount = todayLearned.length
+  if (added) this.newWordsInBook++
+  this.checkCompleted()
+},
     next() {
       if (!this.showAnswer) { this.showAnswer = true; return }
       this.nextWord()
@@ -123,10 +132,10 @@ export default {
       this.checkCompleted()
     },
     checkCompleted() {
-      if (this.currentProgress >= this.targetCount && this.targetCount > 0) {
-        this.isCompleted = true
-      }
-    },
+  if (this.todayLearnedCount >= this.targetCount && this.targetCount > 0) {
+    this.isCompleted = true
+  }
+},
     restart() {
       this.isCompleted = false
       this.newWordsInBook = 0
@@ -351,5 +360,41 @@ export default {
 .home-btn {
   background: var(--glass);
   color: var(--primary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-xl);
+  
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: var(--space-lg);
+  }
+  
+  p {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: #333;
+    margin-bottom: var(--space);
+  }
+  
+  .start-learn-btn {
+    @include btn;
+    width: 10rem;
+    height: 2.4rem;
+    font-size: var(--text-base);
+    background: var(--primary);
+    color: #fff;
+    border-radius: var(--radius);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    margin-top: var(--space-xl);
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  }
 }
 </style>
